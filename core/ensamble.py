@@ -39,6 +39,7 @@ def ensamblar_vector_fuerzas(estructura: Estructura) -> np.ndarray:
     ndofs_por_nodo = 3
     n_nodos = len(estructura.nodos)
     F = np.zeros(ndofs_por_nodo * n_nodos)
+    elementos_dict = {e.id: e for e in estructura.elementos}
 
     # Ensamblaje de cargas nodales
     for carga in estructura.cargas_nodales:
@@ -49,7 +50,7 @@ def ensamblar_vector_fuerzas(estructura: Estructura) -> np.ndarray:
 
     # Ensamblaje de cargas equivalentes de barra
     for carga_barra in estructura.cargas_barras:
-        elem = estructura.elementos[carga_barra.barra_id - 1]
+        elem = elementos_dict.get(carga_barra.barra_id)
         tipo_carga = estructura.tipos_carga[carga_barra.carga_id - 1]
 
         fe_global = elem.cargas_equivalentes_globales(tipo_carga)
