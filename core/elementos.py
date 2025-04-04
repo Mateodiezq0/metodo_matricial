@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import numpy as np
 from typing import List, Optional
+from math import cos, sin, radians
 
 @dataclass
 class Nodo:
@@ -42,20 +43,20 @@ class CargaBarra:
     carga_id: int
 
 
+
 @dataclass
 class Elemento:
-    id: int               # Identificador único del elemento
-    nodo_i: int           # Nodo inicial (ID)
-    nodo_f: int           # Nodo final (ID)
-    E: float              # Módulo de elasticidad
-    b: float              # Base de la sección
-    h: float              # Altura de la sección
-    artic_i: bool = False # ¿Está articulado en el extremo inicial?
-    artic_f: bool = False # ¿En el extremo final?
-    tipo: int = 2         # Tipo de elemento (por defecto pórtico plano)
-    L: Optional[float] = None   # Longitud (se calcula luego)
-    tita: Optional[float] = None # Ángulo respecto del eje X (en grados)
-
+    id: int
+    nodo_i: int
+    nodo_f: int
+    E: float
+    b: float
+    h: float
+    artic_i: bool = False
+    artic_f: bool = False
+    tipo: int = 2
+    L: Optional[float] = None
+    tita: Optional[float] = None
 
     def area(self):
         return self.b * self.h
@@ -69,7 +70,7 @@ class Elemento:
         dy = coord_f[1] - coord_i[1]
         self.L = np.hypot(dx, dy)
         self.tita = np.degrees(np.arctan2(dy, dx))
-    
+
     def matriz_rigidez_portico(self):
         assert self.L is not None and self.tita is not None, "Longitud y ángulo deben estar definidos"
         A = self.area()
@@ -88,7 +89,55 @@ class Elemento:
             [0,     6*E*I/L**2,   2*E*I/L,        0, -6*E*I/L**2,   4*E*I/L],
         ])
 
-        R = np.array([
+        R = self.matriz_rotacion()
+        return R.T @ Kloc @ R
+
+    def calcular_cargas_equivalentes_locales(self, tipo_carga) -> np.ndarray:
+        if tipo_carga.tipo == 1:
+            q = tipo_carga.q1
+            alpha = radians(tipo_carga.alpha)
+            L = self.L
+            tita = radians(self.tita)
+
+            vt = np.array([cos(tita), sin(tita)])
+            va = np.array([cos(alpha), sin(alpha)])
+
+            seno = vt[0] * va[1] - vt[1] * va[0]
+            cose = np.dot(vt, va)
+
+            N = -cose * q * L / 2 * abs(seno)
+            Q = -seno * q * L / 2 * abs(seno)
+            M = -seno * q * L**2 / 12 * abs(seno)
+
+            return np.array([N, Q, M, N, Q, -M])
+
+        elif tipo_carga.tipo == 2:
+            p = tipo_carga.q1  # Magnitud de carga puntual
+            li = self.L * tipo_carga.L1
+            lj = self.L - li
+            alpha = radians(tipo_carga.alpha)
+            tita = radians(self.tita)
+
+            sen_a = sin(alpha - tita)
+            cos_a = cos(alpha - tita)
+            L = self.L
+
+            Ni = -cos_a * p * lj / L
+            Nj = -cos_a * p * li / L
+            Mi = -sen_a * p * li * (lj / L)**2
+            Mj = -sen_a * p * lj * (li / L)**2
+            Qi = -sen_a * p * ((lj / L)**2) * (3 - 2 * lj / L)
+            Qj = -sen_a * p * ((li / L)**2) * (3 - 2 * li / L)
+
+            return np.array([Ni, Qi, Mi, Nj, Qj, -Mj])
+
+        else:
+            raise NotImplementedError("Tipo de carga no soportado")
+
+    def matriz_rotacion(self) -> np.ndarray:
+        c = np.cos(np.radians(self.tita))
+        s = np.sin(np.radians(self.tita))
+        return np.array([
             [ c,  s, 0,  0, 0, 0],
             [-s,  c, 0,  0, 0, 0],
             [ 0,  0, 1,  0, 0, 0],
@@ -97,8 +146,10 @@ class Elemento:
             [ 0,  0, 0,  0, 0, 1],
         ])
 
-        return R.T @ Kloc @ R
-
+    def cargas_equivalentes_globales(self, tipo_carga) -> np.ndarray:
+        f_local = self.calcular_cargas_equivalentes_locales(tipo_carga)
+        R = self.matriz_rotacion()
+        return R.T @ f_local
 
 @dataclass
 class Estructura:
