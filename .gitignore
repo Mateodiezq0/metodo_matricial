@@ -1,0 +1,18 @@
+# Directorios y archivos de pytest
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Resultados de pruebas y cobertura
+.coverage
+htmlcov/
+.coverage.*
+*.cover
+*.xml
+*.cache
+
+# Archivos específicos de pytest (si los tienes)
+test_output/
+test-reports/
+.pytest/
