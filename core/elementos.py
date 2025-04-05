@@ -62,7 +62,6 @@ class Elemento:
         return self.b * self.h
 
     def inercia(self):
-        self.inercia = (self.b * self.h ** 3) / 12
         return (self.b * self.h ** 3) / 12
 
     def calcular_longitud_y_angulo(self, coord_i: np.ndarray, coord_f: np.ndarray):
@@ -93,21 +92,29 @@ class Elemento:
         return R.T @ Kloc @ R
 
     def calcular_cargas_equivalentes_locales(self, tipo_carga) -> np.ndarray:
+        if tipo_carga is None or tipo_carga.tipo == 0:
+            return np.zeros(6)
+
         if tipo_carga.tipo == 1:
             q = tipo_carga.q1
+            
             alpha = radians(tipo_carga.alpha)
-            L = self.L
             tita = radians(self.tita)
 
-            vt = np.array([cos(tita), sin(tita)])
-            va = np.array([cos(alpha), sin(alpha)])
+            L = self.L
 
-            seno = vt[0] * va[1] - vt[1] * va[0]
-            cose = np.dot(vt, va)
+            cos_a = cos(alpha - tita)
+            sen_a = sin(alpha - tita)
 
-            N = -cose * q * L / 2 * abs(seno)
-            Q = -seno * q * L / 2 * abs(seno)
-            M = -seno * q * L**2 / 12 * abs(seno)
+            
+            print("AAAAAAAAAAAAAAAAAA")
+            print(L)
+
+            print("AAAAAAAAAAAAAAAAAA")
+
+            N = -cos_a * q * L / 2
+            Q = -sen_a * q * L / 2
+            M = -sen_a * q * L**2 / 12
 
             return np.array([N, Q, M, N, Q, -M])
 
@@ -165,8 +172,14 @@ class Estructura:
     def agregar_elemento(self, elem: Elemento):
         self.elementos.append(elem)
 
-    def agregar_carga_nodal(self, carga: CargaNodal):
-        self.cargas_nodales.append(carga)
+    def agregar_carga_nodal(self, carga_nodal: CargaNodal):
+        tipo = next((tc for tc in self.tipos_carga if tc.id == carga_nodal.nodo_id), None)
+        if tipo is None:
+            raise ValueError(f"Tipo de carga {carga_nodal.nodo_id} no encontrado.")
+
+        fx = tipo.q1 * np.cos(np.radians(tipo.alpha))
+        fy = tipo.q1 * np.sin(np.radians(tipo.alpha))
+        self.cargas_nodales.append(CargaNodal(carga_nodal.nodo_id, fx, fy, 0))
 
     def agregar_tipo_carga(self, tipo: TipoCarga):
         self.tipos_carga.append(tipo)
