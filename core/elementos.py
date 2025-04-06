@@ -29,12 +29,12 @@ class CargaNodal:
 @dataclass
 class TipoCarga:
     id: int
-    tipo: int  # 1: uniforme, 2: puntual
-    L1: float
-    L2: float
-    q1: float
-    q2: float
-    alpha: float
+    tipo: int  # 1: distribuida, 2: puntual
+    L1: float  # Posición de inicio de la carga (sólo en cargas distribuidas o puntuales)
+    L2: float  # Para cargas distribuidas, marca el fin de la carga
+    q1: float  # Magnitud de la carga (si tipo == 2: carga puntual, si tipo == 1: intensidad)
+    q2: float  # (Solo si tipo == 1) Varía la carga en la barra (por ejemplo, lineal)
+    alpha: float  # Ángulo respecto al eje X
 
 
 @dataclass
@@ -57,6 +57,10 @@ class Elemento:
     tipo: int = 2
     L: Optional[float] = None
     tita: Optional[float] = None
+
+    # Nuevos atributos para guardar los objetos Nodo
+    nodo_i_obj: Optional["Nodo"] = None
+    nodo_f_obj: Optional["Nodo"] = None
 
     def area(self):
         return self.b * self.h
@@ -92,52 +96,87 @@ class Elemento:
         return R.T @ Kloc @ R
 
     def calcular_cargas_equivalentes_locales(self, tipo_carga) -> np.ndarray:
+        def _nodo_soporta_carga(nodo, comp: list[int]) -> bool:
+            if nodo is None:
+                return False
+            if nodo.restricciones is None:
+                # Si no hay restricciones, lo tratamos como nudo interno que genera reacción
+                return True
+            return any(nodo.restricciones[i] for i in comp)
+
+
         if tipo_carga is None or tipo_carga.tipo == 0:
             return np.zeros(6)
 
+        L = self.L
+        L1 = tipo_carga.L1
+        L2 = tipo_carga.L2
+        tita = radians(self.tita)
+
+        nodo_i = self.nodo_i_obj
+        nodo_j = self.nodo_f_obj
+
+        nodo_i_fijo =  _nodo_soporta_carga(nodo_i, [0, 1, 2])
+        nodo_j_fijo =  _nodo_soporta_carga(nodo_j, [0, 1, 2])
+
         if tipo_carga.tipo == 1:
             q = tipo_carga.q1
-            
             alpha = radians(tipo_carga.alpha)
-            tita = radians(self.tita)
-
-            L = self.L
-
             cos_a = cos(alpha - tita)
             sen_a = sin(alpha - tita)
 
-            
-            print("AAAAAAAAAAAAAAAAAA")
-            print(L)
+            if nodo_i_fijo and not nodo_j_fijo:
+                Fx = q * (L2-L1) * cos_a 
+                Fy = q * (L2-L1) * sen_a 
+                MA = -q * (L2-L1) * (L - (L2-L1)/2) * sen_a
+                return np.array([Fx, Fy, MA, 0, 0, 0])
 
-            print("AAAAAAAAAAAAAAAAAA")
+            elif nodo_j_fijo and not nodo_i_fijo:
+                Fx = q * (L2-L1) * cos_a 
+                Fy = q * (L2-L1) * sen_a 
+                MB = -q * (L2-L1) * (L - (L2-L1)/2) * sen_a
+                return np.array([0, 0, 0, Fx, Fy, MB])
 
-            N = -cos_a * q * L / 2
-            Q = -sen_a * q * L / 2
-            M = -sen_a * q * L**2 / 12
+            elif nodo_i_fijo and nodo_j_fijo: #NO ES GENERICO HAY QUE CAMBIAR ESTO XD
+                N = cos_a * q * L / 2
+                Q = sen_a * q * L / 2
+                M = sen_a * q * L**2 / 12
+                return np.array([N, Q, M, N, Q, -M])
 
-            return np.array([N, Q, M, N, Q, -M])
+            else:
+                raise ValueError("Ambos nodos son libres, no puede aplicarse carga.")
 
         elif tipo_carga.tipo == 2:
-            p = tipo_carga.q1  # Magnitud de carga puntual
+            p = tipo_carga.q1
             li = self.L * tipo_carga.L1
             lj = self.L - li
             alpha = radians(tipo_carga.alpha)
-            tita = radians(self.tita)
-
-            sen_a = sin(alpha - tita)
             cos_a = cos(alpha - tita)
-            L = self.L
+            sen_a = sin(alpha - tita)
 
-            Ni = -cos_a * p * lj / L
-            Nj = -cos_a * p * li / L
-            Mi = -sen_a * p * li * (lj / L)**2
-            Mj = -sen_a * p * lj * (li / L)**2
-            Qi = -sen_a * p * ((lj / L)**2) * (3 - 2 * lj / L)
-            Qj = -sen_a * p * ((li / L)**2) * (3 - 2 * li / L)
+            if nodo_i_fijo and not nodo_j_fijo:
+                Fx = -p * cos_a
+                Fy = -p * sen_a
+                MA = -p * sen_a * (L - li)
+                return np.array([Fx, Fy, MA, 0, 0, 0])
 
-            return np.array([Ni, Qi, Mi, Nj, Qj, -Mj])
+            elif nodo_j_fijo and not nodo_i_fijo:
+                Fx = -p * cos_a
+                Fy = -p * sen_a
+                MB = p * sen_a * li
+                return np.array([0, 0, 0, Fx, Fy, -MB])
 
+            elif nodo_i_fijo and nodo_j_fijo:
+                Ni = -cos_a * p * lj / L
+                Nj = -cos_a * p * li / L
+                Mi = -sen_a * p * li * (lj / L)**2
+                Mj = -sen_a * p * lj * (li / L)**2
+                Qi = -sen_a * p * ((lj / L)**2) * (3 - 2 * lj / L)
+                Qj = -sen_a * p * ((li / L)**2) * (3 - 2 * li / L)
+                return np.array([Ni, Qi, Mi, Nj, Qj, -Mj])
+
+            else:
+                raise ValueError("Ambos nodos son libres, no puede aplicarse carga.")
         else:
             raise NotImplementedError("Tipo de carga no soportado")
 
@@ -157,6 +196,8 @@ class Elemento:
         f_local = self.calcular_cargas_equivalentes_locales(tipo_carga)
         R = self.matriz_rotacion()
         return R.T @ f_local
+
+
 
 @dataclass
 class Estructura:

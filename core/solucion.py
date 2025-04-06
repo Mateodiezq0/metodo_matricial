@@ -23,20 +23,23 @@ def resolver_sistema(K: np.ndarray, F: np.ndarray, estructura: Estructura) -> np
     ndofs = len(F)
     prescripciones = np.full(ndofs, np.nan)
 
-    # Paso 1: Cargar desplazamientos prescritos (o ceros)
+    # Paso 1: Cargar desplazamientos prescritos (solo si hay restricciones reales)
     for nodo in estructura.nodos:
         base = (nodo.id - 1) * 3
-        for i in range(3):
-            if nodo.restricciones[i]:
-                prescripciones[base + i] = nodo.valores_prescritos[i]
+        if nodo.restricciones is not None:
+            for i in range(3):
+                if nodo.restricciones[i]:
+                    prescripciones[base + i] = nodo.valores_prescritos[i]
 
+    # Armamos índices de fijos y libres
     idx_fijos = np.where(~np.isnan(prescripciones))[0]
     idx_libres = np.where(np.isnan(prescripciones))[0]
 
+    # Vector de desplazamientos global
     D = np.zeros(ndofs)
     D[idx_fijos] = prescripciones[idx_fijos]
 
-    # Paso 2: Resolver sistema reducido
+    # Sistema reducido
     Kll = K[np.ix_(idx_libres, idx_libres)]
     Klf = K[np.ix_(idx_libres, idx_fijos)]
     Fl = F[idx_libres]
@@ -48,21 +51,25 @@ def resolver_sistema(K: np.ndarray, F: np.ndarray, estructura: Estructura) -> np
     return D
 
 
-def calcular_solicitaciones(estructura: Estructura, D: np.ndarray):
+
+
+
+
+def calcular_solicitaciones(estructura: Estructura, D: np.ndarray) -> List[np.ndarray]:
     """
-    Calcula los esfuerzos (solicitaciones) de extremo de barra en coordenadas globales.
+    Calcula los esfuerzos nodales de cada barra en coordenadas globales.
 
     Parameters
     ----------
     estructura : Estructura
-        Instancia de la estructura con nodos, elementos y cargas.
+        Instancia de la estructura.
     D : np.ndarray
-        Vector global de desplazamientos ya resuelto.
+        Vector global de desplazamientos resuelto.
 
     Returns
     -------
     List[np.ndarray]
-        Lista con los vectores de esfuerzos nodales por barra (6 componentes c/u).
+        Lista con los vectores de esfuerzos nodales por barra (globales, 6 componentes).
     """
     esfuerzos = []
 
@@ -71,22 +78,23 @@ def calcular_solicitaciones(estructura: Estructura, D: np.ndarray):
         nf = elem.nodo_f - 1
 
         dofs = [
-            3*ni, 3*ni+1, 3*ni+2,
-            3*nf, 3*nf+1, 3*nf+2
+            3 * ni, 3 * ni + 1, 3 * ni + 2,
+            3 * nf, 3 * nf + 1, 3 * nf + 2
         ]
 
-        D_elem = D[dofs]  # Extraer desplazamientos globales de la barra
+        D_elem = D[dofs]
         K_elem = elem.matriz_rigidez_portico()
 
-        # Vector de empotramiento perfecto (cargas equivalentes)
+        # Sumar todas las cargas equivalentes aplicadas a la barra
         A_elem = np.zeros(6)
         for carga_barra in estructura.cargas_barras:
             if carga_barra.barra_id == elem.id:
-                tipo_carga = estructura.tipos_carga[carga_barra.carga_id - 1]
-                A_elem += elem.cargas_equivalentes_globales(tipo_carga)
+                tipo_carga = next((tc for tc in estructura.tipos_carga if tc.id == carga_barra.carga_id), None)
+                if tipo_carga:
+                    A_elem += elem.cargas_equivalentes_globales(tipo_carga)
 
-        # Solicitudes en extremos: F = K·D + A
-        F_elem = K_elem @ D_elem - A_elem #CUIDADO AHORA ESTÁ EN NEGATIVO PORQUE SUPUESTAMENTE ES LA CARGA EMPOTRADA
+        # Reacción interna: fuerza nodal generada por desplazamiento (K·D) más carga equivalente
+        F_elem = K_elem @ D_elem - A_elem  # 👈 esto da la solicitación interna neta
         esfuerzos.append(F_elem)
 
     return esfuerzos
@@ -101,9 +109,9 @@ def transformar_a_locales(esfuerzos_globales: List[np.ndarray], estructura: Estr
     Parameters
     ----------
     esfuerzos_globales : List[np.ndarray]
-        Lista de esfuerzos nodales por barra en coordenadas globales (6 valores).
+        Lista de esfuerzos nodales por barra (globales).
     estructura : Estructura
-        Estructura con elementos que contienen la matriz de rotación.
+        Lista de elementos estructurales con matriz de rotación.
 
     Returns
     -------
@@ -114,7 +122,7 @@ def transformar_a_locales(esfuerzos_globales: List[np.ndarray], estructura: Estr
 
     for elem, Fg in zip(estructura.elementos, esfuerzos_globales):
         R = elem.matriz_rotacion()
-        Fl = R @ Fg  # Rotar a local
+        Fl = R @ Fg
         esfuerzos_locales.append(Fl)
 
     return esfuerzos_locales
