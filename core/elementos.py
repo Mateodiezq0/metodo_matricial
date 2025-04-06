@@ -97,7 +97,13 @@ class Elemento:
 
     def calcular_cargas_equivalentes_locales(self, tipo_carga) -> np.ndarray:
         def _nodo_soporta_carga(nodo, comp: list[int]) -> bool:
-            return nodo is not None and nodo.restricciones is not None and any(nodo.restricciones[i] for i in comp)
+            if nodo is None:
+                return False
+            if nodo.restricciones is None:
+                # Si no hay restricciones, lo tratamos como nudo interno que genera reacción
+                return True
+            return any(nodo.restricciones[i] for i in comp)
+
 
         if tipo_carga is None or tipo_carga.tipo == 0:
             return np.zeros(6)

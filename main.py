@@ -8,15 +8,15 @@ E = 210  # t/cm^2
 estructura = Estructura()
 
 # Nodos
-estructura.agregar_nodo(Nodo(1, 0, 0, [True, True, True], [0, 0, 0]))
-estructura.agregar_nodo(Nodo(2, 100, 300, [True, True, True], [0, 0, 0]))
-estructura.agregar_nodo(Nodo(3, 300, 300, [True, True, True], [0, 0, 0]))
-estructura.agregar_nodo(Nodo(4, 0, 300, [False, False, False], [0, 0, 0]))
+estructura.agregar_nodo(Nodo(1, 0, 0, [True, True, True], [0, 0, 0])) #Empotrado
+estructura.agregar_nodo(Nodo(2, 100, 300, None, [0, 0, 0])) #Nudo
+estructura.agregar_nodo(Nodo(3, 300, 300, [True, True, True], [0, 0, 0])) #Empotrado
+estructura.agregar_nodo(Nodo(4, 0, 300, [False, False, False], [0, 0, 0])) #Libre
 
 # Elementos
 estructura.agregar_elemento(Elemento(1, 1, 2, E, 20, 20))  # 20x20
-estructura.agregar_elemento(Elemento(2, 4, 2, E, 30, 20))  # 30x20
-estructura.agregar_elemento(Elemento(3, 2, 3, E, 30, 20))  # 30x20
+estructura.agregar_elemento(Elemento(2, 4, 2, E, 20, 30))  # 30x20
+estructura.agregar_elemento(Elemento(3, 2, 3, E, 20, 30))  # 30x20
 
 # Asociar objetos Nodo a los elementos
 for elemento in estructura.elementos:
@@ -111,9 +111,9 @@ print(F)
 
 
 
-""" # --- Ensamble y solución ---
+# --- Ensamble y solución ---
 K = ensamblar_matriz_rigidez(estructura)
-F = ensamblar_vector_fuerzas(estructura)
+
 D = resolver_sistema(K, F, estructura)
 esf_globales = calcular_solicitaciones(estructura, D)
 esf_locales = transformar_a_locales(esf_globales, estructura)
@@ -131,4 +131,4 @@ for i, ef in enumerate(esf_globales, 1):
     print(f"Barra {i}: {ef}")
 print("\nEsfuerzos locales (N, Q, M):")
 for i, ef in enumerate(esf_locales, 1):
-    print(f"Barra {i}: {ef}") """
+    print(f"Barra {i}: {ef}")
