@@ -9,14 +9,19 @@ estructura = Estructura()
 
 # Nodos
 estructura.agregar_nodo(Nodo(1, 0, 0, [True, True, True], [0, 0, 0]))
-estructura.agregar_nodo(Nodo(2, 100, 300))
-estructura.agregar_nodo(Nodo(3, 300, 300))
-estructura.agregar_nodo(Nodo(4, 0, 300, [True, True, True], [0, 0, 0]))
+estructura.agregar_nodo(Nodo(2, 100, 300, [True, True, True], [0, 0, 0]))
+estructura.agregar_nodo(Nodo(3, 300, 300, [True, True, True], [0, 0, 0]))
+estructura.agregar_nodo(Nodo(4, 0, 300, [False, False, False], [0, 0, 0]))
 
 # Elementos
 estructura.agregar_elemento(Elemento(1, 1, 2, E, 20, 20))  # 20x20
-estructura.agregar_elemento(Elemento(2, 2, 4, E, 30, 20))  # 20x30
-estructura.agregar_elemento(Elemento(3, 2, 3, E, 30, 20))  # En cm pq soy gay
+estructura.agregar_elemento(Elemento(2, 4, 2, E, 30, 20))  # 30x20
+estructura.agregar_elemento(Elemento(3, 2, 3, E, 30, 20))  # 30x20
+
+# Asociar objetos Nodo a los elementos
+for elemento in estructura.elementos:
+    elemento.nodo_i_obj = estructura.nodos[elemento.nodo_i-1]
+    elemento.nodo_f_obj = estructura.nodos[elemento.nodo_f-1]
 
 # Calcular geometría
 coords = {n.id: n.get_coord() for n in estructura.nodos}
@@ -24,19 +29,28 @@ for elem in estructura.elementos:
     elem.calcular_longitud_y_angulo(coords[elem.nodo_i], coords[elem.nodo_f])
 
 # Cargas distribuidas en elementos 2 (1 t/m vertical)
-estructura.agregar_tipo_carga(TipoCarga(1, 1, 0, 0, -0.01, -0.01, 90))  # vertical
+estructura.agregar_tipo_carga(TipoCarga(1, 1, 0, 100, -0.01, -0.01, 90))  # vertical
 estructura.agregar_carga_barra(CargaBarra(2, 1))
 
 # Cargas distribuidas en elementos 2 (1 t/m vertical)
-estructura.agregar_tipo_carga(TipoCarga(3, 1, 00, 0, -0.01, -0.01, 90))  # vertical
+estructura.agregar_tipo_carga(TipoCarga(3, 1, 0, 300, -0.01, -0.01, 90))  # vertical
 estructura.agregar_carga_barra(CargaBarra(3, 3))
 
 # Carga puntual en nodo 2, 20 t a 30 grados
-estructura.agregar_tipo_carga(TipoCarga(2, 2, 1, 0, -20, 0, 30))
+estructura.agregar_tipo_carga(TipoCarga(2, 2, 100, 0, -20, 0, 30))
 estructura.agregar_carga_nodal(CargaNodal(2, 2))
 
 
-print(estructura.elementos)
+for elem in estructura.elementos:
+    print(elem)
+    print("\n")
+    print("--------------------------------------------")
+
+for nodo in estructura.nodos:
+    print(nodo)
+    print("\n")
+    print("--------------------------------------------")
+
 
 print("\nCargas equivalentes locales por barra:")
 for elem in estructura.elementos:
