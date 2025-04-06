@@ -68,30 +68,36 @@ for elem in estructura.elementos:
 
 
 
-""" 
+ 
 #-----------------------------------
+# Tamaño del sistema
 ndofs_por_nodo = 3
 n_nodos = len(estructura.nodos)
 F = np.zeros(ndofs_por_nodo * n_nodos)
-elementos_dict = {e.id: e for e in estructura.elementos}
 
-# Ensamblaje de cargas nodales
+elementos_dict = {e.id: e for e in estructura.elementos}
+tipos_carga_dict = {tc.id: tc for tc in estructura.tipos_carga}
+
+# Ensamblaje de cargas nodales puntuales
 for carga in estructura.cargas_nodales:
     idx = (carga.nodo_id - 1) * ndofs_por_nodo
     F[idx + 0] += carga.fx
     F[idx + 1] += carga.fy
     F[idx + 2] += carga.mz
 
-print(F)
-print("--------------------")
 # Ensamblaje de cargas equivalentes de barra
 for carga_barra in estructura.cargas_barras:
     elem = elementos_dict.get(carga_barra.barra_id)
-    tipo_carga = estructura.tipos_carga[carga_barra.carga_id - 1]
+    tipo_carga = tipos_carga_dict.get(carga_barra.carga_id)
+
+    if elem is None or tipo_carga is None:
+        print(f"⚠️ Elemento o tipo de carga no encontrado para barra {carga_barra.barra_id}")
+        continue
 
     fe_global = elem.cargas_equivalentes_globales(tipo_carga)
     ni = elem.nodo_i - 1
     nf = elem.nodo_f - 1
+
     dofs = [
         3 * ni, 3 * ni + 1, 3 * ni + 2,
         3 * nf, 3 * nf + 1, 3 * nf + 2,
@@ -101,8 +107,6 @@ for carga_barra in estructura.cargas_barras:
         F[dofs[i]] += fe_global[i]
 
 print(F)
- """
- 
 
 
 
