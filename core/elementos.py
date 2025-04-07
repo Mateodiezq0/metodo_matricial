@@ -151,10 +151,10 @@ class Elemento:
                     
                     if (abs(q2)>=abs(q1)):
                         print("Arriba izq")
-                        MA =  ((q1 * (L2-L1) * (L2 + ((L2-L1)/2))) + ((q2-q1) * ((L2-L1)/2) * (L2+((L2-L1)/3))) )
+                        MA =  ((q1 * (L2-L1) * (L- L2 + ((L2-L1)/2))) + ((q2-q1) * ((L2-L1)/2) * (L2+((L2-L1)/3))) )
                     else:
                         print("Abajo izq")
-                        MA =  ((q2 * (L2-L1) * (L2 + ((L2-L1)/2))) + ((q1-q2) * ((L2-L1)/2) * (L2+(2*(L2-L1)/3))) )
+                        MA =  ((q2 * (L2-L1) * (L- L2 + ((L2-L1)/2))) + ((q1-q2) * ((L2-L1)/2) * (L2+(2*(L2-L1)/3))) )
                         
                     return np.array([0, 0, 0, Fx, Fy, -MA])
 
