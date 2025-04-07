@@ -119,36 +119,61 @@ class Elemento:
         nodo_i_fijo =  _nodo_soporta_carga(nodo_i, [0, 1, 2])
         nodo_j_fijo =  _nodo_soporta_carga(nodo_j, [0, 1, 2])
 
-        if tipo_carga.tipo == 1:
+        if tipo_carga.tipo == 1: #Continua
             q = tipo_carga.q1
+            q1 = tipo_carga.q1
+            q2 = tipo_carga.q2
+
             alpha = radians(tipo_carga.alpha)
             cos_a = cos(alpha - tita)
             sen_a = sin(alpha - tita)
 
-            if nodo_i_fijo and not nodo_j_fijo:
-                Fx = q * (L2-L1) * cos_a 
-                Fy = q * (L2-L1) * sen_a 
-                MA = -q * (L2-L1) * (L - (L2-L1)/2) * sen_a
-                return np.array([Fx, Fy, MA, 0, 0, 0])
+            empotrado_empotrado = nodo_i_fijo and nodo_j_fijo
 
-            elif nodo_j_fijo and not nodo_i_fijo:
-                Fx = q * (L2-L1) * cos_a 
-                Fy = q * (L2-L1) * sen_a 
-                MB = -q * (L2-L1) * (L - (L2-L1)/2) * sen_a
-                return np.array([0, 0, 0, Fx, Fy, MB])
+            libre_empotrado = nodo_j_fijo and not nodo_i_fijo
 
-            elif nodo_i_fijo and nodo_j_fijo: #NO ES GENERICO HAY QUE CAMBIAR ESTO XD
+            empotrado_libre = nodo_i_fijo and not nodo_j_fijo
+
+
+            if empotrado_empotrado: #NO ES GENERICO HAY QUE CAMBIAR ESTO XD # Fijo-Fijo
                 N = cos_a * q * L / 2
                 Q = sen_a * q * L / 2
                 M = sen_a * q * L**2 / 12
                 return np.array([N, Q, M, N, Q, -M])
 
+            elif (libre_empotrado) or (empotrado_libre): #Fijo - Libre
+
+                Fx = ((q1 * (L2-L1)) + (q2-q1) * (L2-L1)/2) * cos_a 
+            
+                Fy =  ((q1 * (L2-L1)) + (q2-q1) * (L2-L1)/2) * sen_a 
+                
+                if libre_empotrado:
+                    
+                    if (abs(q2)>=abs(q1)):
+                        print("Arriba izq")
+                        MA =  ((q1 * (L2-L1) * (L - L2 + (L2/2))) + ((q2-q1) * ((L2-L1)/2) * (L-L2+((L2-L1)/3))) )
+                    else:
+                        print("Abajo izq")
+                        MA =  ((q1 * (L2-L1) * (L - L2 + (L2/2))) + ((q1-q2) * ((L2-L1)/2) * (L-L2+(2*(L2-L1)/3))) )
+                        
+                    return np.array([0, 0, 0, Fx, Fy, -MA])
+
+                else: # empotrado_libre
+                    if (abs(q2)>=abs(q1)):
+                        print("Abajo der")
+                        MA =  ((q1 * (L2-L1) * (L - L2 + (L2/2))) + ((q2-q1) * ((L2-L1)/2) * (L-L2+(2*(L2-L1)/3))) )
+                    else:
+                        print("Arriba der")
+                        MA =  ((q1 * (L2-L1) * (L - L2 + (L2/2))) + ((q1-q2) * ((L2-L1)/2) * (L-L2+((L2-L1)/3))) )
+                        
+                    return np.array([Fx, Fy, MA, 0, 0, 0 ])
+                             
             else:
                 raise ValueError("Ambos nodos son libres, no puede aplicarse carga.")
 
-        elif tipo_carga.tipo == 2:
+        elif tipo_carga.tipo == 2: #Puntual
             p = tipo_carga.q1
-            li = self.L * tipo_carga.L1
+            li = self.L * tipo_carga.L1 
             lj = self.L - li
             alpha = radians(tipo_carga.alpha)
             cos_a = cos(alpha - tita)

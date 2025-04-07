@@ -33,7 +33,7 @@ estructura.agregar_tipo_carga(TipoCarga(1, 1, 0, 100, -0.01, -0.01, 90))  # vert
 estructura.agregar_carga_barra(CargaBarra(2, 1))
 
 # Cargas distribuidas en elementos 2 (1 t/m vertical)
-estructura.agregar_tipo_carga(TipoCarga(3, 1, 0, 300, -0.01, -0.01, 90))  # vertical
+estructura.agregar_tipo_carga(TipoCarga(3, 1, 100, 300, -0.01, -0.01, 90))  # vertical
 estructura.agregar_carga_barra(CargaBarra(3, 3))
 
 # Carga puntual en nodo 2, 20 t a 30 grados
