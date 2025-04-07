@@ -7,11 +7,22 @@ carga = TipoCarga(
     tipo=1,
     L1=0.25,
     L2=0.5,
-    q1=-0.5,
-    q2=-0.2,
+    q1=-0.2,
+    q2=-0.5,
     alpha=90  # Vertical hacia abajo
 )
 
+q1 =-0.2
+L2=0.5
+L1=0.25
+q2=-0.5
+L = 1
+alpha=90
+MA =  ((q2 * (L2-L1) * (L1 + ((L2-L1)/2))) + ((q1-q2) * ((L2-L1)/2) * (L1+((L2-L1)/3))) )
+
+print("Este es el testeo DXDXD")
+print (MA)
+print("Fin de testeo")
 # Casos a evaluar: (Nombre, restricciones nodo_i, restricciones nodo_f)
 casos = [
     ("Empotrado - Libre", [True, True, True], [False, False, False]),
