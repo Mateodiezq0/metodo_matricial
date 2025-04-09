@@ -171,39 +171,45 @@ class Elemento:
             else:
                 raise ValueError("Ambos nodos son libres, no puede aplicarse carga.")
 
-        elif tipo_carga.tipo == 2: #Puntual
+        elif tipo_carga.tipo == 2:  # Carga puntual
+            #print("Arranca el calculo del puntual")
+            #print(f"Barra: {self}")
+
+            li = L1
+            lj = L - L1           #modificao
+
+            #print(f"li: {li}     lj: {lj}")
+
+            alpha_local = radians(tipo_carga.alpha - tita)
             p = tipo_carga.q1
-            li = self.L * tipo_carga.L1 
-            lj = self.L - li
-            alpha = radians(tipo_carga.alpha)
-            cos_a = cos(alpha - tita)
-            sen_a = sin(alpha - tita)
 
-            if nodo_i_fijo and not nodo_j_fijo:
-                Fx = -p * cos_a
-                Fy = -p * sen_a
-                MA = -p * sen_a * (L - li)
-                return np.array([Fx, Fy, MA, 0, 0, 0])
+            #print(f"alpha_local: {alpha_local}     p: {p}")
 
-            elif nodo_j_fijo and not nodo_i_fijo:
-                Fx = -p * cos_a
-                Fy = -p * sen_a
-                MB = p * sen_a * li
-                return np.array([0, 0, 0, Fx, Fy, -MB])
 
-            elif nodo_i_fijo and nodo_j_fijo:
-                Ni = -cos_a * p * lj / L
-                Nj = -cos_a * p * li / L
-                Mi = -sen_a * p * li * (lj / L)**2
-                Mj = -sen_a * p * lj * (li / L)**2
-                Qi = -sen_a * p * ((lj / L)**2) * (3 - 2 * lj / L)
-                Qj = -sen_a * p * ((li / L)**2) * (3 - 2 * li / L)
-                return np.array([Ni, Qi, Mi, Nj, Qj, -Mj])
 
-            else:
-                raise ValueError("Ambos nodos son libres, no puede aplicarse carga.")
+            # Descomposición de la carga en el sistema local
+            N = p * cos(alpha_local)  # Axial
+            
+            Q = p * sin(alpha_local)  # Cortante
+
+            #print(f"N: {N}     Q: {Q}")
+
+            # Cálculo de solicitaciones equivalentes (Timoshenko / Cook)
+            Ni = N * (lj / L)
+            Nj = N * (li / L)
+
+            
+
+            Qi = Q * ((lj / L)**2) * (3 - 2 * lj / L)
+            Qj = Q * ((li / L)**2) * (3 - 2 * li / L)
+
+            Mi = Q * li * (lj / L)**2
+            Mj =  Q * lj * (li / L)**2
+
+            return np.array([Ni, Qi, Mi, Nj, Qj, -Mj])
+
         else:
-            raise NotImplementedError("Tipo de carga no soportado")
+            raise NotImplementedError("Tipo de carga no soportado o libre-libre")
 
     def matriz_rotacion(self) -> np.ndarray:
         c = np.cos(np.radians(self.tita))
