@@ -8,11 +8,14 @@ E = 210  # t/cm^2
 estructura = Estructura()
 
 # Nodos
-estructura.agregar_nodo(Nodo(1, 300, 0, [True, True, True], [0, 0, 0])) # Empotrado
-estructura.agregar_nodo(Nodo(2, 300, 300, None, [0, 0, 0])) #Nudo
-estructura.agregar_nodo(Nodo(3, 0, 600, [True, True, False], [0, 0, 0])) #Fijo
-estructura.agregar_nodo(Nodo(4, 900, 300, [False, True, False], [0, 0, 0])) #Apoyo simple
-estructura.agregar_nodo(Nodo(5, 1050, 300, [False, False, False], [0, 0, 0])) #Libre
+estructura.agregar_nodo(Nodo(1, 500, 0, [True, True, True], [0, 0, 0])) # Empotrado
+
+estructura.agregar_nodo(Nodo(2, 500, 300, None, [0, 0, 0])) #Nudo
+
+
+estructura.agregar_nodo(Nodo(3, 1100, 300, [False, True, False], [0, 0, 0])) #Apoyo simple
+
+estructura.agregar_nodo(Nodo(4, 1300, 300, [False, False, False], [0, 0, 0])) #Libre
 
 # Elementos
 estructura.agregar_elemento(Elemento(
@@ -27,36 +30,25 @@ estructura.agregar_elemento(Elemento(
     tita=90
 ))
 
-estructura.agregar_elemento(Elemento(
-    id=2,
-    nodo_i=3,
-    nodo_f=2,
-    E=210,   #Tn/cm2
-    b=20,
-    h=30,
-    artic_i=False,
-    artic_f=False,
-    tita=135
-))
 
 estructura.agregar_elemento(Elemento(
     id=3,
     nodo_i=2,
-    nodo_f=4,
+    nodo_f=3,
     E=210,   #Tn/cm2
     b=20,
-    h=60,
+    h=30,
     artic_i=False,
     artic_f=False
 ))
 
 estructura.agregar_elemento(Elemento(
     id=4,
-    nodo_i=4,
-    nodo_f=5,
+    nodo_i=3,
+    nodo_f=4,
     E=210,   #Tn/cm2
     b=20,
-    h=60,
+    h=30,
     artic_i=False,
     artic_f=False
 ))
@@ -73,14 +65,16 @@ coords = {n.id: n.get_coord() for n in estructura.nodos}
 for elem in estructura.elementos:
     elem.calcular_longitud_y_angulo(coords[elem.nodo_i], coords[elem.nodo_f])
 
-# Cargas distribuidas en elemento 3 (3 t/m vertical)
+
+#------------Distribuidas-------------------
+# Cargas distribuidas en elemento 2 (2 t/m vertical)
 estructura.agregar_tipo_carga(TipoCarga(
     id=1,
     tipo=1,
     L1=0,
     L2=600,
-    q1=-0.03,
-    q2=-0.03,
+    q1=-0.02,
+    q2=-0.02,
     alpha=90
 ))  # vertical
 
@@ -89,37 +83,42 @@ estructura.agregar_carga_barra(CargaBarra(
     carga_id=1
 ))
 #----------Segunda carga-----------------
+
+
 estructura.agregar_tipo_carga(TipoCarga(
-    id=2,
+    id=3,
     tipo=1,
     L1=0,
-    L2=150,
-    q1=-0.03,
-    q2=-0.03,
+    L2=200,
+    q1=-0.02,
+    q2=-0.02,
     alpha=90
 ))  # vertical
 
 estructura.agregar_carga_barra(CargaBarra(
     barra_id=4,
-    carga_id=2
+    carga_id=3
 ))
 
 
-#------------Tercer Carga-------------------
-# Carga puntual en elemento 3 (1,80 t inclinada)
-estructura.agregar_tipo_carga(TipoCarga(
-    id=3,
+
+#------------Puntuales-------------------
+
+""" estructura.agregar_tipo_carga(TipoCarga(
+    id=4,
     tipo=2,
-    L1=200,
-    L2=200,
-    q1=-1.80,
-    q2=-1.80,
-    alpha=45
+    L1=100,
+    L2=100,
+    q1=-5.00,
+    q2=-5.00,
+    alpha=30
 ))  
 estructura.agregar_carga_barra(CargaBarra(
     barra_id=3,
-    carga_id=3
+    carga_id=4
 ))
+ """
+
 
 
 

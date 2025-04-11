@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import numpy as np
 from typing import List, Optional
-from math import cos, sin, radians
+from math import cos, sin, radians, pi
 
 @dataclass
 class Nodo:
@@ -172,31 +172,35 @@ class Elemento:
                 raise ValueError("Ambos nodos son libres, no puede aplicarse carga.")
 
         elif tipo_carga.tipo == 2:  # Carga puntual
-            #print("Arranca el calculo del puntual")
-            #print(f"Barra: {self}")
+            print("Arranca el calculo del puntual")
+            print(f"Barra: {self}")
 
             li = L1
             lj = L - L1           #modificao
-
-            #print(f"li: {li}     lj: {lj}")
-
-            alpha_local = radians(tipo_carga.alpha - tita)
+     
+            print(f"li: {li}     lj: {lj}")
+    
+            alpha_local = (radians(tipo_carga.alpha) - radians(tita)) % (2 * pi)
             p = tipo_carga.q1
-
-            #print(f"alpha_local: {alpha_local}     p: {p}")
+  
+            print(f"alpha_local: {alpha_local}     p: {p}")
 
 
 
             # Descomposición de la carga en el sistema local
             N = p * cos(alpha_local)  # Axial
             
-            Q = p * sin(alpha_local)  # Cortante
 
-            #print(f"N: {N}     Q: {Q}")
+            Q = p * sin(alpha_local)  # Cortante
+            print(Q)
+
+            print(f"N: {N}     Q: {Q}")
 
             # Cálculo de solicitaciones equivalentes (Timoshenko / Cook)
             Ni = N * (lj / L)
             Nj = N * (li / L)
+            print(f"L: {N,lj,L}")
+            print(f"L: {Ni}")
 
             
 
