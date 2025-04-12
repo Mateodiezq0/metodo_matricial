@@ -1,6 +1,8 @@
 from core.elementos import Nodo, Elemento, CargaNodal, TipoCarga, CargaBarra, Estructura
 from core.ensamble import ensamblar_matriz_rigidez, ensamblar_vector_fuerzas
 from core.solucion import resolver_sistema, calcular_solicitaciones, transformar_a_locales
+from grafico import plot_estructura
+
 import numpy as np
 
 # --- Datos del problema ---
@@ -12,10 +14,11 @@ estructura.agregar_nodo(Nodo(1, 500, 0, [True, True, True], [0, 0, 0])) # Empotr
 
 estructura.agregar_nodo(Nodo(2, 500, 300, None, [0, 0, 0])) #Nudo
 
+estructura.agregar_nodo(Nodo(3, 100, 600, [True, True, False], [0, 0, 0])) #Fijo
 
-estructura.agregar_nodo(Nodo(3, 1100, 300, [False, True, False], [0, 0, 0])) #Apoyo simple
+estructura.agregar_nodo(Nodo(4, 1100, 300, [False, True, False], [0, 0, 0])) #Apoyo simple
 
-estructura.agregar_nodo(Nodo(4, 1300, 300, [False, False, False], [0, 0, 0])) #Libre
+estructura.agregar_nodo(Nodo(5, 1300, 300, [False, False, False], [0, 0, 0])) #Libre
 
 # Elementos
 estructura.agregar_elemento(Elemento(
@@ -30,11 +33,23 @@ estructura.agregar_elemento(Elemento(
     tita=90
 ))
 
+estructura.agregar_elemento(Elemento(
+    id=2,
+    nodo_i=3,
+    nodo_f=2,
+    E=210,   #Tn/cm2
+    b=20,
+    h=30,
+    artic_i=False,
+    artic_f=False,
+    tita=144
+))
+
 
 estructura.agregar_elemento(Elemento(
     id=3,
     nodo_i=2,
-    nodo_f=3,
+    nodo_f=4,
     E=210,   #Tn/cm2
     b=20,
     h=30,
@@ -44,8 +59,8 @@ estructura.agregar_elemento(Elemento(
 
 estructura.agregar_elemento(Elemento(
     id=4,
-    nodo_i=3,
-    nodo_f=4,
+    nodo_i=4,
+    nodo_f=5,
     E=210,   #Tn/cm2
     b=20,
     h=30,
@@ -86,7 +101,7 @@ estructura.agregar_carga_barra(CargaBarra(
 
 
 estructura.agregar_tipo_carga(TipoCarga(
-    id=3,
+    id=2,
     tipo=1,
     L1=0,
     L2=200,
@@ -97,27 +112,27 @@ estructura.agregar_tipo_carga(TipoCarga(
 
 estructura.agregar_carga_barra(CargaBarra(
     barra_id=4,
-    carga_id=3
+    carga_id=2
 ))
 
 
 
 #------------Puntuales-------------------
 
-""" estructura.agregar_tipo_carga(TipoCarga(
-    id=4,
+estructura.agregar_tipo_carga(TipoCarga(
+    id=3,
     tipo=2,
-    L1=100,
-    L2=100,
+    L1=250,
+    L2=250,
     q1=-5.00,
     q2=-5.00,
-    alpha=30
+    alpha=60
 ))  
 estructura.agregar_carga_barra(CargaBarra(
-    barra_id=3,
-    carga_id=4
+    barra_id=2,
+    carga_id=3
 ))
- """
+
 
 
 
@@ -219,3 +234,6 @@ print("\nEsfuerzos locales (N, Q, M):")
 for i, ef in enumerate(esf_locales, 1):
     print(f"Barra {i}: {ef}")
  
+
+# --- Gráfico de la estructura ---
+plot_estructura(estructura, escala=0.1)
